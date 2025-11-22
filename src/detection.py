@@ -1,7 +1,9 @@
 import cv2
 import time
+import datetime
 from ultralytics import YOLO
 from utils import Utils
+from notifications import Notification
 
 
 class Detector:
@@ -38,14 +40,14 @@ class Detector:
         # Diccionario para controlar tiempos dentro de la zona
         self.presence_timers = {}
 
+        # Diccionario para controlar alertas disparadas
+        self.alert_fired = {}
+
         # Tiempo de objeto en la zona para disparar alerta (s)
         self.alert_duration = 60
 
         # Ruta para capturas de pantalla
         self.path = "captures"
-
-        # Control de última captura
-        self.last_capture_time = dict.fromkeys(self.target_classes, 0)
 
     def detect(self, frame):
         """
@@ -66,9 +68,7 @@ class Detector:
                 conf = float(box.conf[0])
                 class_name = self.model.names[cls_id]
 
-                # Filtra solo los objetivos con la confianza mínima
                 if class_name in self.target_classes and conf >= self.conf_threshold:
-                    # Coordenadas del bounding box
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
                     detections.append({
                         'class': class_name,
@@ -138,47 +138,65 @@ class Detector:
         :rtype: tuple(bool, list)
         """
         x1_zone, y1_zone, x2_zone, y2_zone = self.limit_zone
-        current_time = time.time()
-        alert_triggered = False
+        detections_in_zone = []
+        detected_objects = set()
+        alert_trigger = False
 
-        alert_objects = []
-
-        # Objetos detectados dentro de la zona
-        current_in_zone = []
-
+        # Detección de objetos dentro de la zona
         for det in detections:
+            cls = det['class']
             x1, y1, x2, y2 = det['bbox']
-            cx = (x1 + x2) // 2
-            cy = (y1 + y2) // 2
-            class_name = det['class']
 
-            # Comprobar si el centro del objeto cae dentro del área
-            if x1_zone <= cx <= x2_zone and y1_zone <= cy <= y2_zone:
-                alert_triggered = True
-                alert_objects.append(class_name)
-                current_in_zone.append(class_name)
+            if x1 < x2_zone and x2 > x1_zone and y1 < y2_zone and y2 > y1_zone:
+                detections_in_zone.append(det)
+                detected_objects.add(cls)
 
-                # Iniciar temporizador si no existía
-                if class_name not in self.presence_timers:
-                    self.presence_timers[class_name] = current_time
+        # Iniciar temporizador si se encontraron objetos en la zona
+        for cls in detected_objects:
+            if cls not in self.presence_timers:
+                self.presence_timers[cls] = time.time()
+            if cls not in self.alert_fired:
+                self.alert_fired[cls] = False
 
-                # Calcular tiempo dentro
-                elapsed = current_time - self.presence_timers[class_name]
-
-                # Si supera el umbral y no se ha guardado recientemente
-                if (elapsed >= self.alert_duration and
-                        current_time - self.last_capture_time[class_name] > self.alert_duration):
-                    print(f"{class_name} dentro de la zona por {int(elapsed)}s")
-                    Utils.save_capture(frame, class_name, self.path)
-                    self.last_capture_time[class_name] = current_time
-            else:
-                # Si sale de la zona, eliminar el temporizador
-                if class_name in self.presence_timers:
-                    del self.presence_timers[class_name]
-
-        # Limpiar timers de objetos que ya no están en zona
+        # Eliminar temporizador si ya no hay objetos en la zona
         for cls in list(self.presence_timers.keys()):
-            if cls not in current_in_zone:
+            if cls not in detected_objects:
                 del self.presence_timers[cls]
+                if cls in self.alert_fired:
+                    del self.alert_fired[cls]
 
-        return alert_triggered, alert_objects
+        # Verificar si el objeto permanece en la zona
+        for cls, start_time in self.presence_timers.items():
+            elapsed = time.time() - start_time
+            if elapsed >= self.alert_duration:
+
+                # Solo disparar si no ha sido disparada antes
+                if not self.alert_fired.get(cls, False):
+                    alert_trigger = True
+                    print(f"{cls} dentro de la zona por {int(elapsed)}s")
+
+                    # Enviar notificación
+                    self.trigger_actions(frame)
+
+                    # Marcar que ya se disparó la alerta
+                    self.alert_fired[cls] = True
+
+        return alert_trigger, detections_in_zone
+
+
+    def trigger_actions(self, frame):
+        """
+        Ejecuta las acciones al disparar la alerta.
+
+        :param frame: Imagen capturada
+        :type frame: np.array
+
+        :return: None
+        :rtype: None
+        """
+        filepath = Utils.save_capture(frame, self.path)
+
+        notification = Notification()
+
+        timestamp = datetime.datetime.now().strftime("%Y/%m/%d %H:%M")
+        notification.send_telegram_photo(filepath, f"{timestamp} Un repartidor ha llegado a tu domicilio.")
