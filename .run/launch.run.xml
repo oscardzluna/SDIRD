@@ -6,6 +6,8 @@
     <option name="PARENT_ENVS" value="true" />
     <envs>
       <env name="PYTHONUNBUFFERED" value="1" />
+      <env name="TELEGRAM_CHAT_ID" value="1138150600" />
+      <env name="TELEGRAM_TOKEN" value="8490805389:AAF1MM7GbPWadvpQ7K4tgp_4Mqx4i1voKag" />
     </envs>
     <option name="SDK_HOME" value="" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />

@@ -2,7 +2,7 @@ import cv2
 from detection import Detector
 
 def main():
-    detector = Detector(model_path='../models/yolov8n.pt', conf_threshold=0.45)
+    detector = Detector(model_path='../models/best.pt', conf_threshold=0.45)
     cap = cv2.VideoCapture(0)
 
     if not cap.isOpened():
