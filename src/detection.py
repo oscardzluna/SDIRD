@@ -24,15 +24,17 @@ class Detector:
         self.conf_threshold = conf_threshold
 
         # Objetos
-        self.target_classes = ['person', 'motorcycle', 'car', 'truck']
+        self.target_classes = ['box', 'delivery man']
+        # self.target_classes = ['person', 'motorcycle', 'car', 'truck']
 
         # Identificador de colores por objeto
-        self.class_colors = {
-            'person': (0, 255, 0),  # Verde
-            'motorcycle': (255, 165, 0),  # Naranja
-            'car': (255, 0, 0),  # Azul
-            'truck': (0, 0, 255),  # Rojo
-        }
+        self.class_colors = {'box': (255, 0, 0), 'delivery man': (0, 0, 255)}
+        #self.class_colors = {
+        #    'person': (0, 255, 0),  # Verde
+        #    'motorcycle': (255, 165, 0),  # Naranja
+        #    'car': (255, 0, 0),  # Azul
+        #    'truck': (0, 0, 255),  # Rojo
+        #}
 
         # Coordenadas de la zona límite (x1, y1, x2, y2)
         self.limit_zone = (50, 50, 550, 480)
@@ -44,7 +46,7 @@ class Detector:
         self.alert_fired = {}
 
         # Tiempo de objeto en la zona para disparar alerta (s)
-        self.alert_duration = 60
+        self.alert_duration = 10
 
         # Ruta para capturas de pantalla
         self.path = "captures"
@@ -199,4 +201,4 @@ class Detector:
         notification = Notification()
 
         timestamp = datetime.datetime.now().strftime("%Y/%m/%d %H:%M")
-        notification.send_telegram_photo(filepath, f"{timestamp} Un repartidor ha llegado a tu domicilio.")
+        # notification.send_telegram_photo(filepath, f"{timestamp} Un repartidor ha llegado a tu domicilio.")
