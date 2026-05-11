@@ -1,10 +1,12 @@
+import os
+
 import requests
 
 
 class Notification:
 
-    TOKEN = "8490805389:AAF1MM7GbPWadvpQ7K4tgp_4Mqx4i1voKag"
-    CHAT_ID = "1138150600"
+    TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+    CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
     def send_telegram_message(self, text):
         """
