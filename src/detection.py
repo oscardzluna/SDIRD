@@ -24,26 +24,27 @@ class Detector:
         self.conf_threshold = conf_threshold
 
         # Objetos
-        self.target_classes = ['box', 'delivery man']
-        # self.target_classes = ['person', 'motorcycle', 'car', 'truck']
+        self.target_classes = ['amazon', 'amazon logo', 'delivery man', 'dhl', 'estafeta', 'mercado libre', 'package']
 
         # Identificador de colores por objeto
-        self.class_colors = {'box': (255, 0, 0), 'delivery man': (0, 0, 255)}
-        #self.class_colors = {
-        #    'person': (0, 255, 0),  # Verde
-        #    'motorcycle': (255, 165, 0),  # Naranja
-        #    'car': (255, 0, 0),  # Azul
-        #    'truck': (0, 0, 255),  # Rojo
-        #}
+        self.class_colors = {
+            'amazon': (44, 174, 243), # Azul claro
+            'amazon logo': (255, 161, 0), # Naranja
+            'delivery man': (72, 207, 60), # Verde
+            'dhl': (113, 72, 19), # Rosa
+            'estafeta': (255, 0, 0), # Rojo
+            'mercado libre': (15, 50, 255), # Azul fuerte
+            'package': (255, 0, 255), # Rosa
+        }
 
         # Coordenadas de la zona límite (x1, y1, x2, y2)
-        self.limit_zone = (50, 50, 550, 480)
+        self.limit_zone = (150, 100, 850, 650)
 
-        # Diccionario para controlar tiempos dentro de la zona
-        self.presence_timers = {}
+        # Bandera para controlar tiempos dentro de la zona
+        self.condition_start_time = None
 
-        # Diccionario para controlar alertas disparadas
-        self.alert_fired = {}
+        # Bandera para controlar alertas disparadas
+        self.alert_sent = False
 
         # Tiempo de objeto en la zona para disparar alerta (s)
         self.alert_duration = 10
@@ -153,35 +154,35 @@ class Detector:
                 detections_in_zone.append(det)
                 detected_objects.add(cls)
 
-        # Iniciar temporizador si se encontraron objetos en la zona
-        for cls in detected_objects:
-            if cls not in self.presence_timers:
-                self.presence_timers[cls] = time.time()
-            if cls not in self.alert_fired:
-                self.alert_fired[cls] = False
+        has_delivery_man = 'delivery man' in detected_objects
+        companion_classes = {'amazon', 'amazon logo', 'dhl', 'estafeta', 'mercado libre', 'package'}
+        has_companion = bool(detected_objects.intersection(companion_classes))
 
-        # Eliminar temporizador si ya no hay objetos en la zona
-        for cls in list(self.presence_timers.keys()):
-            if cls not in detected_objects:
-                del self.presence_timers[cls]
-                if cls in self.alert_fired:
-                    del self.alert_fired[cls]
+        condition_met = has_delivery_man and has_companion
+        if condition_met:
+            # Iniciar temporizador si se encontraron objetos en la zona
+            if self.condition_start_time is None:
+                self.condition_start_time = time.time()
 
-        # Verificar si el objeto permanece en la zona
-        for cls, start_time in self.presence_timers.items():
-            elapsed = time.time() - start_time
+            # Calcular tiempo transcurrido
+            elapsed = time.time() - self.condition_start_time
+
+            # Verificar si el objeto permanece en la zona
             if elapsed >= self.alert_duration:
-
                 # Solo disparar si no ha sido disparada antes
-                if not self.alert_fired.get(cls, False):
+                if not self.alert_sent:
                     alert_trigger = True
-                    print(f"{cls} dentro de la zona por {int(elapsed)}s")
+                    print(f"Repartidor dentro de la zona por {int(elapsed)}s")
 
-                    # Enviar notificación
+                    # Ejecutar acciones
                     self.trigger_actions(frame)
 
-                    # Marcar que ya se disparó la alerta
-                    self.alert_fired[cls] = True
+                    # Marcar alerta como enviada
+                    self.alert_sent = True
+        else:
+            # Eliminar temporizador si ya no hay objetos en la zona
+            self.condition_start_time = None
+            self.alert_sent = False
 
         return alert_trigger, detections_in_zone
 
@@ -197,8 +198,6 @@ class Detector:
         :rtype: None
         """
         filepath = Utils.save_capture(frame, self.path)
-
         notification = Notification()
-
         timestamp = datetime.datetime.now().strftime("%Y/%m/%d %H:%M")
         # notification.send_telegram_photo(filepath, f"{timestamp} Un repartidor ha llegado a tu domicilio.")
