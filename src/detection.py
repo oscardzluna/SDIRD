@@ -200,4 +200,4 @@ class Detector:
         filepath = Utils.save_capture(frame, self.path)
         notification = Notification()
         timestamp = datetime.datetime.now().strftime("%Y/%m/%d %H:%M")
-        # notification.send_telegram_photo(filepath, f"{timestamp} Un repartidor ha llegado a tu domicilio.")
+        notification.send_telegram_photo(filepath, f"{timestamp} Un repartidor ha llegado a tu domicilio.")

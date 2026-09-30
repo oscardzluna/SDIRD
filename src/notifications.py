@@ -45,4 +45,6 @@ class Notification:
             if caption:
                 data["caption"] = caption
 
-            requests.post(url, data=data, files=files)
+            response = requests.post(url, data=data, files=files)
+            if 400 <= response.status_code < 600:
+                print(f"Error al enviar la foto: {response.status_code} - {response.text}")

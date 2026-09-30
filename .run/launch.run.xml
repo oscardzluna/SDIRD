@@ -7,13 +7,15 @@
     <envs>
       <env name="PYTHONUNBUFFERED" value="1" />
       <env name="TELEGRAM_CHAT_ID" value="1138150600" />
-      <env name="TELEGRAM_TOKEN" value="8490805389:AAF1MM7GbPWadvpQ7K4tgp_4Mqx4i1voKag" />
+      <env name="TELEGRAM_BOT_TOKEN" value="8490805389:AAF1MM7GbPWadvpQ7K4tgp_4Mqx4i1voKag" />
     </envs>
     <option name="SDK_HOME" value="" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
     <option name="IS_MODULE_SDK" value="true" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
+    <option name="DEBUG_JUST_MY_CODE" value="true" />
+    <option name="RUN_TOOL" value="" />
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/main.py" />
     <option name="PARAMETERS" value="" />
     <option name="SHOW_COMMAND_LINE" value="false" />
